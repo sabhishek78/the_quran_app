@@ -31,6 +31,7 @@ class _QuranAppState extends State<QuranApp>
   String quoteTitle="Juz Of The Day";
   AnimationController controller;
   bool randomQuote=true;
+
   Future<String> fetchQuoteOfTheDay() async {
     quoteTitle="Juz Of The Day";
     Map quoteMap;
@@ -59,7 +60,48 @@ class _QuranAppState extends State<QuranApp>
     loading = false;
     setState(() {});
   }
+  Future<String> fetchSurahOfTheDay() async {
+    quoteTitle="Surah Of The Day";
+    String surah;
 
+
+    Random random = new Random();
+    int sura_Number = random.nextInt(114)+1;
+    int ayah_Number = random.nextInt(5)+1;
+    Response response = await get('http://api.quran-tafseer.com/quran/$sura_Number/$ayah_Number');
+    /* Response response = await get(
+        'https://favqs.com/api/quotes/?filter=${widget.tag}&type=tag',
+        headers: {
+          'Authorization': 'Token token=3388d212c6f286a19932bf93aae6eb54'
+        });*/
+    print(response.statusCode);
+    if (response.statusCode == 200) {
+       surah = utf8.decode(response.bodyBytes);
+    }
+    print(surah);
+    for(int i=0;i<surah.length;i++){
+      if(surah[i]=='t'&& surah[i+1]=='e'&&surah[i+2]=='x' && surah[i+3]=='t'){
+       quote='';
+        for(int j=i+7;surah[j]!='"';j++){
+          quote=quote+surah[j];
+        }
+        print(quote);
+      }
+      if(surah[i]=='s'&& surah[i+1]=='u'&&surah[i+2]=='r' && surah[i+3]=='a'){
+        number='';
+        for(int j=i+12;surah[j]!='"';j++){
+          number=number+surah[j];
+        }
+        print(number);
+      }
+    }
+
+
+    controller.forward(from: 0.0);
+
+    loading = false;
+    setState(() {});
+  }
 
 
   @override
@@ -129,27 +171,11 @@ class _QuranAppState extends State<QuranApp>
                 },
               ),
             ),
-            Ink(
-              color: Colors.transparent,
-              child: ListTile(
-                title: Text('Get a Juz Of The Quran',
-                    style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 20,
-                        color: Colors.red,
-                        fontStyle: FontStyle.italic)),
-                onTap: () {
-                  randomQuote=true;
-                  setState(() {});
-                  fetchQuoteOfTheDay();
-                  Navigator.pop(context);
-                },
-              ),
-            ),
+
             Ink(
               color: Colors.pink[100],
               child: ListTile(
-                title: Text('Get a Manzil Of The Quran',
+                title: Text('Get a Surah Of The Quran',
                     style: TextStyle(
                         fontWeight: FontWeight.bold,
                         fontSize: 20,
@@ -159,46 +185,12 @@ class _QuranAppState extends State<QuranApp>
                   randomQuote=true;
                   loading = true;
                   setState(() {});
-                  fetchQuoteOfTheDay();
+                  fetchSurahOfTheDay();
                   Navigator.pop(context);
                 },
               ),
             ),
-            Ink(
-              color: Colors.transparent,
-              child: ListTile(
-                title: Text('Get a Ayah Of The Quran',
-                    style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 20,
-                        color: Colors.red,
-                        fontStyle: FontStyle.italic)),
-                onTap: () {
-                  randomQuote=true;
-                  setState(() {});
-                  fetchQuoteOfTheDay();
-                  Navigator.pop(context);
-                },
-              ),
-            ),
-            Ink(
-              color: Colors.pink[100],
-              child: ListTile(
-                title: Text('Get a Ruku Of The Quran',
-                    style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 20,
-                        color: Colors.red,
-                        fontStyle: FontStyle.italic)),
-                onTap: () {
-                  randomQuote=true;
-                  loading = true;
-                  setState(() {});
-                  fetchQuoteOfTheDay();
-                  Navigator.pop(context);
-                },
-              ),
-            ),
+
 
           ],
         ),
@@ -234,7 +226,7 @@ class _QuranAppState extends State<QuranApp>
                   flex: 1,
                   child: ScaleTransition(
                     scale: Tween(begin: 1.5, end: 1.0).animate(controller),
-                    child: Text('Juz Number'+'$number',
+                    child: Text('$number',
                         style: TextStyle(
                             fontWeight: FontWeight.bold,
                             fontSize: 20,
