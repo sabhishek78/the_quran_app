@@ -1,117 +1,280 @@
+import 'dart:convert';
+import 'dart:async';
+import 'dart:math';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-
+import 'package:http/http.dart';
+import 'dart:math';
 void main() {
-  runApp(MyApp());
+  runApp(MaterialApp(
+    title: 'The Quran App',
+    theme: ThemeData(
+      brightness: Brightness.light,
+      primarySwatch: Colors.red,
+    ),
+    darkTheme:
+    ThemeData(brightness: Brightness.dark, primarySwatch: Colors.red),
+    home: QuranApp(),
+  ));
 }
 
-class MyApp extends StatelessWidget {
-  // This widget is the root of your application.
+class QuranApp extends StatefulWidget {
   @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Flutter Demo',
-      theme: ThemeData(
-        // This is the theme of your application.
-        //
-        // Try running your application with "flutter run". You'll see the
-        // application has a blue toolbar. Then, without quitting the app, try
-        // changing the primarySwatch below to Colors.green and then invoke
-        // "hot reload" (press "r" in the console where you ran "flutter run",
-        // or simply save your changes to "hot reload" in a Flutter IDE).
-        // Notice that the counter didn't reset back to zero; the application
-        // is not restarted.
-        primarySwatch: Colors.blue,
-        // This makes the visual density adapt to the platform that you run
-        // the app on. For desktop platforms, the controls will be smaller and
-        // closer together (more dense) than on mobile platforms.
-        visualDensity: VisualDensity.adaptivePlatformDensity,
-      ),
-      home: MyHomePage(title: 'Flutter Demo Home Page'),
-    );
-  }
+  _QuranAppState createState() => _QuranAppState();
 }
 
-class MyHomePage extends StatefulWidget {
-  MyHomePage({Key key, this.title}) : super(key: key);
+class _QuranAppState extends State<QuranApp>
+    with SingleTickerProviderStateMixin {
+  String number = "Fetching...."; //
+  String quote = "Fetching...."; //
+  String tag;
+  String quoteTitle="Juz Of The Day";
+  AnimationController controller;
+  bool randomQuote=true;
+  Future<String> fetchQuoteOfTheDay() async {
+    quoteTitle="Juz Of The Day";
+    Map quoteMap;
 
-  // This widget is the home page of your application. It is stateful, meaning
-  // that it has a State object (defined below) that contains fields that affect
-  // how it looks.
+    Random random = new Random();
+    int juzNumber = random.nextInt(30)+1;
+    Response response = await get('http://api.alquran.cloud/v1/juz/$juzNumber/en.asad ');
+    /* Response response = await get(
+        'https://favqs.com/api/quotes/?filter=${widget.tag}&type=tag',
+        headers: {
+          'Authorization': 'Token token=3388d212c6f286a19932bf93aae6eb54'
+        });*/
+    print(response.statusCode);
+    if (response.statusCode == 200) {
+      quoteMap = jsonDecode(response.body);
+    }
+    print(quoteMap);
+    print(juzNumber);
+    print(quoteMap['data']['ayahs'][0]['text']);
+    quote = quoteMap['data']['ayahs'][0]['text'];
+    number=juzNumber.toString();
+    print(quote);
 
-  // This class is the configuration for the state. It holds the values (in this
-  // case the title) provided by the parent (in this case the App widget) and
-  // used by the build method of the State. Fields in a Widget subclass are
-  // always marked "final".
+    controller.forward(from: 0.0);
 
-  final String title;
-
-  @override
-  _MyHomePageState createState() => _MyHomePageState();
-}
-
-class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
-
-  void _incrementCounter() {
-    setState(() {
-      // This call to setState tells the Flutter framework that something has
-      // changed in this State, which causes it to rerun the build method below
-      // so that the display can reflect the updated values. If we changed
-      // _counter without calling setState(), then the build method would not be
-      // called again, and so nothing would appear to happen.
-      _counter++;
-    });
+    loading = false;
+    setState(() {});
   }
 
+
+
+  @override
+  void initState() {
+    controller = AnimationController(
+        duration: Duration(milliseconds: 1200), vsync: this, value: 0);
+    fetchQuoteOfTheDay();
+    super.initState();
+
+  }
+  bool loading = false;
   @override
   Widget build(BuildContext context) {
-    // This method is rerun every time setState is called, for instance as done
-    // by the _incrementCounter method above.
-    //
-    // The Flutter framework has been optimized to make rerunning build methods
-    // fast, so that you can just rebuild anything that needs updating rather
-    // than having to individually change instances of widgets.
     return Scaffold(
+      backgroundColor: Colors.white,
       appBar: AppBar(
-        // Here we take the value from the MyHomePage object that was created by
-        // the App.build method, and use it to set our appbar title.
-        title: Text(widget.title),
+        centerTitle: true,
+        backgroundColor: Colors.red,
+        title: Text(quoteTitle,
+            style: TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 30,
+                fontStyle: FontStyle.italic,
+                color: Colors.white)),
       ),
-      body: Center(
-        // Center is a layout widget. It takes a single child and positions it
-        // in the middle of the parent.
-        child: Column(
-          // Column is also a layout widget. It takes a list of children and
-          // arranges them vertically. By default, it sizes itself to fit its
-          // children horizontally, and tries to be as tall as its parent.
-          //
-          // Invoke "debug painting" (press "p" in the console, choose the
-          // "Toggle Debug Paint" action from the Flutter Inspector in Android
-          // Studio, or the "Toggle Debug Paint" command in Visual Studio Code)
-          // to see the wireframe for each widget.
-          //
-          // Column has various properties to control how it sizes itself and
-          // how it positions its children. Here we use mainAxisAlignment to
-          // center the children vertically; the main axis here is the vertical
-          // axis because Columns are vertical (the cross axis would be
-          // horizontal).
-          mainAxisAlignment: MainAxisAlignment.center,
+      drawer: Drawer(
+        // Add a ListView to the drawer. This ensures the user can scroll
+        // through the options in the drawer if there isn't enough vertical
+        // space to fit everything.
+        child: ListView(
+          // Important: Remove any padding from the ListView.
+          padding: EdgeInsets.zero,
           children: <Widget>[
-            Text(
-              'You have pushed the button this many times:',
+            DrawerHeader(
+              child: Text(
+                'Holy Quran Quotes',
+                style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 35,
+                    color: Colors.white,
+                    fontStyle: FontStyle.italic),
+                textAlign: TextAlign.center,
+              ),
+              decoration: BoxDecoration(
+                image: DecorationImage(
+                  image: ExactAssetImage('assets/rose-wallpaper.jpg'),
+                  fit: BoxFit.cover,
+                ),
+                color: Colors.red,
+              ),
             ),
-            Text(
-              '$_counter',
-              style: Theme.of(context).textTheme.headline4,
+            Ink(
+              color: Colors.pink[100],
+              child: ListTile(
+                title: Text('Get a Juz Of The Quran',
+                    style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 20,
+                        color: Colors.red,
+                        fontStyle: FontStyle.italic)),
+                onTap: () {
+                  randomQuote=true;
+                  loading = true;
+                  setState(() {});
+                  fetchQuoteOfTheDay();
+                  Navigator.pop(context);
+                },
+              ),
             ),
+            Ink(
+              color: Colors.transparent,
+              child: ListTile(
+                title: Text('Get a Juz Of The Quran',
+                    style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 20,
+                        color: Colors.red,
+                        fontStyle: FontStyle.italic)),
+                onTap: () {
+                  randomQuote=true;
+                  setState(() {});
+                  fetchQuoteOfTheDay();
+                  Navigator.pop(context);
+                },
+              ),
+            ),
+            Ink(
+              color: Colors.pink[100],
+              child: ListTile(
+                title: Text('Get a Manzil Of The Quran',
+                    style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 20,
+                        color: Colors.red,
+                        fontStyle: FontStyle.italic)),
+                onTap: () {
+                  randomQuote=true;
+                  loading = true;
+                  setState(() {});
+                  fetchQuoteOfTheDay();
+                  Navigator.pop(context);
+                },
+              ),
+            ),
+            Ink(
+              color: Colors.transparent,
+              child: ListTile(
+                title: Text('Get a Ayah Of The Quran',
+                    style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 20,
+                        color: Colors.red,
+                        fontStyle: FontStyle.italic)),
+                onTap: () {
+                  randomQuote=true;
+                  setState(() {});
+                  fetchQuoteOfTheDay();
+                  Navigator.pop(context);
+                },
+              ),
+            ),
+            Ink(
+              color: Colors.pink[100],
+              child: ListTile(
+                title: Text('Get a Ruku Of The Quran',
+                    style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 20,
+                        color: Colors.red,
+                        fontStyle: FontStyle.italic)),
+                onTap: () {
+                  randomQuote=true;
+                  loading = true;
+                  setState(() {});
+                  fetchQuoteOfTheDay();
+                  Navigator.pop(context);
+                },
+              ),
+            ),
+
           ],
         ),
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Increment',
-        child: Icon(Icons.add),
-      ), // This trailing comma makes auto-formatting nicer for build methods.
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.only(left:20.0),
+          child: Container(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                Flexible(
+                  flex: 5,
+                  child: ScaleTransition(
+                    scale: Tween(begin: 0.5, end: 1.0).animate(controller),
+                    child: Text(
+                      '$quote',
+                      style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 30,
+                          fontStyle: FontStyle.italic,
+                          color: Colors.red,
+
+                          fontFamily: 'Quicksand'),
+                    ),
+                  ),
+                ),
+                SizedBox(
+                  height: 20,
+                ),
+                Flexible(
+                  flex: 1,
+                  child: ScaleTransition(
+                    scale: Tween(begin: 1.5, end: 1.0).animate(controller),
+                    child: Text('Juz Number'+'$number',
+                        style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 20,
+                            fontStyle: FontStyle.italic,
+                            color: Colors.pinkAccent[100])),
+                  ),
+                ),
+                SizedBox(
+                  height: 20,
+                ),
+                Flexible(
+                  flex: 1,
+                  child: FloatingActionButton(
+                    child: AnimatedOpacity(
+                      child: loading ?  CircularProgressIndicator(
+                        valueColor: new AlwaysStoppedAnimation<Color>(Colors.red),
+                      ) : Icon(
+                        Icons.arrow_forward,
+                        color: Colors.red,
+                        size: 40,
+                      ),
+                      opacity: (loading) ? 0 : 1,
+                      duration: Duration(milliseconds: 2000),
+                    ),
+                    backgroundColor: Colors.white,
+                    onPressed: () {
+                      loading = true;
+                      setState(() {});
+                      fetchQuoteOfTheDay();
+
+
+                    },
+                  ),
+                ),
+
+              ],
+            ),
+          ),
+        ),
+      ),
     );
   }
 }
